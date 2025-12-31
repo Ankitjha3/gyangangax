@@ -11,8 +11,8 @@ const Assignments = () => {
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showUploadModal, setShowUploadModal] = useState(false);
-    const [branchFilter, setBranchFilter] = useState(userData?.branch || "All");
-    const [yearFilter, setYearFilter] = useState(userData?.year || "All");
+    const [branchFilter, setBranchFilter] = useState("All");
+    const [yearFilter, setYearFilter] = useState("All");
 
     const branches = ["All", "B.Tech", "MBA", "B.Com", "Pharmacy", "Law", "BBA"];
     const years = ["All", "1st Year", "2nd Year", "3rd Year", "4th Year"];

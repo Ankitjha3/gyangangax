@@ -8,6 +8,7 @@ import EditProfileModal from "../components/EditProfileModal";
 import UserListModal from "../components/UserListModal";
 import { HiArrowLeft, HiCalendar, HiLocationMarker } from "react-icons/hi";
 import { FaInstagram, FaLinkedin, FaGithub, FaLink } from "react-icons/fa";
+import { MdVerified } from "react-icons/md";
 
 const UserProfile = () => {
     const { userId } = useParams();
@@ -227,7 +228,10 @@ const UserProfile = () => {
                     )}
                 </div>
 
-                <h2 className="text-2xl font-bold text-white">{profileData.name}</h2>
+                <div className="flex items-center gap-1">
+                    <h2 className="text-2xl font-bold text-white">{profileData.name}</h2>
+                    {profileData.isVerified && <MdVerified className="text-blue-500" size={20} />}
+                </div>
                 <div className="flex items-center gap-2 text-neutral-500 text-sm mb-3">
                     {profileData.branch && <span>@{profileData.branch}</span>}
                     {profileData.year && <span>• {profileData.year}</span>}

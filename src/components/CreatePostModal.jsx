@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { HiX, HiPhotograph, HiShieldCheck } from "react-icons/hi";
 import { useAuth } from "../context/AuthContext";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, uploadBytesResumable, uploadString } from "firebase/storage";
 import { db, storage } from "../lib/firebase";
 
 const CreatePostModal = ({ onClose }) => {
@@ -19,11 +19,35 @@ const CreatePostModal = ({ onClose }) => {
         setLoading(true);
 
         try {
+            // FORCE TOKEN REFRESH
+            if (user) {
+                console.log("Forcing token refresh...");
+                await user.getIdToken(true);
+                console.log("Token refreshed.");
+            }
+
+            console.log("Storage Bucket:", storage.app.options.storageBucket);
+
             let imageUrl = "";
             if (image) {
-                const imageRef = ref(storage, `feed/${Date.now()}_${image.name}`);
-                const snapshot = await uploadBytes(imageRef, image);
-                imageUrl = await getDownloadURL(snapshot.ref);
+                try {
+                    // Sanitize filename
+                    const cleanName = image.name.replace(/[^a-zA-Z0-9.]/g, "_");
+                    const imageRef = ref(storage, `feed/${Date.now()}_${cleanName}`);
+
+                    console.log("Uploading to:", imageRef.fullPath);
+                    console.log("Storage bucket:", storage.app.options.storageBucket);
+
+                    // Upload without metadata first to be safest
+                    const snapshot = await uploadBytes(imageRef, image);
+                    console.log("Upload successful:", snapshot);
+                    
+                    imageUrl = await getDownloadURL(snapshot.ref);
+                    console.log("Download URL:", imageUrl);
+                } catch (uploadError) {
+                    console.error("Image upload error:", uploadError);
+                    throw new Error(`Image upload failed: ${uploadError.message}`);
+                }
             }
 
             await addDoc(collection(db, "posts"), {
@@ -32,18 +56,24 @@ const CreatePostModal = ({ onClose }) => {
                 authorId: user.uid,
                 authorName: userData.name,
                 authorPhoto: userData.photoURL,
-                authorVerified: userData?.isVerified || false, // Add Verified Status
-                viewedBy: [user.uid], // Creator automatically views it
+                authorVerified: userData?.isVerified || false,
+                viewedBy: [user.uid],
                 isAnonymous,
                 likes: [],
-                isPinned: false, // Default for sorting
+                isPinned: false,
                 timestamp: serverTimestamp(),
-                college: userData.college // For security rules easier check
+                college: userData.college
             });
 
             onClose();
         } catch (error) {
             console.error("Error creating post:", error);
+            console.log("Error Code:", error.code);
+            console.log("Error Message:", error.message);
+            if (error.serverResponse) {
+                console.log("Server Response:", error.serverResponse);
+            }
+            alert(`Upload Failed: ${error.message}`);
         } finally {
             setLoading(false);
         }

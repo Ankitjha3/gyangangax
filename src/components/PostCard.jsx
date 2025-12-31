@@ -1,5 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { HiHeart, HiOutlineHeart, HiUserCircle, HiChatAlt, HiTrash, HiEye, HiCheckCircle } from "react-icons/hi";
+import { MdVerified } from "react-icons/md";
 import { useAuth } from "../context/AuthContext";
 import { doc, updateDoc, deleteDoc, setDoc, getDoc, collection, addDoc, serverTimestamp, increment, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -135,7 +136,7 @@ const PostCard = ({ post }) => {
                             ) : (
                                 <Link to={`/u/${post.authorId}`} className="hover:underline flex items-center gap-1">
                                     {post.authorName}
-                                    {post.authorVerified && <HiCheckCircle className="text-blue-500" size={16} title="Verified Student" />}
+                                    {post.authorVerified && <MdVerified className="text-blue-500" size={16} title="Verified Student" />}
                                 </Link>
                             )}
                         </p>
