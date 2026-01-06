@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
 import EditProfileModal from "../components/EditProfileModal";
 import { HiArrowLeft, HiCalendar, HiLocationMarker } from "react-icons/hi";
+import { FaInstagram, FaLinkedin, FaGithub, FaLink } from "react-icons/fa";
 
 const UserProfile = () => {
     const { userId } = useParams();
@@ -228,6 +229,42 @@ const UserProfile = () => {
 
                 {profileData.bio && (
                     <p className="text-neutral-200 mb-4 whitespace-pre-wrap">{profileData.bio}</p>
+                )}
+
+                {/* Social Links */}
+                {profileData.socialLinks && (
+                    <div className="flex gap-4 mb-4">
+                        {profileData.socialLinks.instagram && (
+                            <a
+                                href={profileData.socialLinks.instagram.startsWith('http') ? profileData.socialLinks.instagram : `https://instagram.com/${profileData.socialLinks.instagram}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-pink-500 hover:text-pink-400 transition-colors"
+                            >
+                                <FaInstagram size={20} />
+                            </a>
+                        )}
+                        {profileData.socialLinks.linkedin && (
+                            <a
+                                href={profileData.socialLinks.linkedin.startsWith('http') ? profileData.socialLinks.linkedin : `https://${profileData.socialLinks.linkedin}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-500 hover:text-blue-400 transition-colors"
+                            >
+                                <FaLinkedin size={20} />
+                            </a>
+                        )}
+                        {profileData.socialLinks.github && (
+                            <a
+                                href={profileData.socialLinks.github.startsWith('http') ? profileData.socialLinks.github : `https://github.com/${profileData.socialLinks.github}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-white hover:text-gray-300 transition-colors"
+                            >
+                                <FaGithub size={20} />
+                            </a>
+                        )}
+                    </div>
                 )}
 
                 <div className="flex gap-4 text-sm text-neutral-400 mb-4">

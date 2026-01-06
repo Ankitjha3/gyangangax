@@ -10,6 +10,9 @@ const EditProfileModal = ({ onClose }) => {
     const [bio, setBio] = useState(userData?.bio || "");
     const [branch, setBranch] = useState(userData?.branch || "");
     const [year, setYear] = useState(userData?.year || "");
+    const [instagram, setInstagram] = useState(userData?.socialLinks?.instagram || "");
+    const [linkedin, setLinkedin] = useState(userData?.socialLinks?.linkedin || "");
+    const [github, setGithub] = useState(userData?.socialLinks?.github || "");
     const [loading, setLoading] = useState(false);
 
     const branches = ["B.Tech", "MBA", "B.Com", "Pharmacy", "Law", "BBA"];
@@ -21,7 +24,10 @@ const EditProfileModal = ({ onClose }) => {
 
         try {
             const userRef = doc(db, "users", user.uid);
-            const updates = { name, bio, branch, year };
+            const updates = {
+                name, bio, branch, year,
+                socialLinks: { instagram, linkedin, github }
+            };
 
             await updateDoc(userRef, updates);
 
@@ -91,6 +97,41 @@ const EditProfileModal = ({ onClose }) => {
                                 <option value="">Select</option>
                                 {years.map(y => <option key={y} value={y}>{y}</option>)}
                             </select>
+                        </div>
+                    </div>
+
+                    {/* Social Links */}
+                    <div className="space-y-3 pt-2 border-t border-neutral-800/50">
+                        <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Social Links</p>
+                        <div>
+                            <label className="block text-xs font-medium text-neutral-400 mb-1">Instagram</label>
+                            <input
+                                type="text"
+                                value={instagram}
+                                onChange={(e) => setInstagram(e.target.value)}
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-pink-500 transition-colors"
+                                placeholder="Instagram Profile URL"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-neutral-400 mb-1">LinkedIn</label>
+                            <input
+                                type="text"
+                                value={linkedin}
+                                onChange={(e) => setLinkedin(e.target.value)}
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-blue-400 transition-colors"
+                                placeholder="LinkedIn Profile URL"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-neutral-400 mb-1">GitHub</label>
+                            <input
+                                type="text"
+                                value={github}
+                                onChange={(e) => setGithub(e.target.value)}
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-white transition-colors"
+                                placeholder="GitHub Profile URL"
+                            />
                         </div>
                     </div>
 

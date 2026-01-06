@@ -3,8 +3,8 @@ import BottomNav from "./BottomNav";
 
 const Layout = () => {
     return (
-        <div className="bg-neutral-950 min-h-screen text-white pb-20">
-            <div className="max-w-md mx-auto min-h-screen relative bg-neutral-950 shadow-2xl">
+        <div className="h-screen bg-neutral-950 text-white flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto relative bg-neutral-950 w-full max-w-md mx-auto shadow-2xl pb-20 no-scrollbar">
                 <Outlet />
             </div>
             <BottomNav />
