@@ -71,7 +71,7 @@ const PostCard = ({ post }) => {
                         senderPhoto: user.photoURL,
                         postId: post.id,
                         timestamp: serverTimestamp(),
-                        read: false
+                        isRead: false
                     });
                 }
             }

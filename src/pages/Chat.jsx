@@ -127,7 +127,7 @@ const Chat = () => {
     if (loading) return <div className="flex justify-center pt-20 text-neutral-500">Loading chat...</div>;
 
     return (
-        <div className="flex flex-col h-full bg-black">
+        <div className="flex flex-col h-[100dvh] bg-neutral-950 w-full max-w-md mx-auto shadow-2xl overflow-hidden">
             <header className="flex items-center gap-4 py-3 px-4 bg-neutral-900 border-b border-neutral-800 shrink-0">
                 <Link to="/chats" className="text-neutral-400 hover:text-white">
                     <HiArrowLeft size={24} />

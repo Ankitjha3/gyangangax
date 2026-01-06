@@ -31,7 +31,6 @@ function App() {
             <Route path="/confessions" element={<Confessions />} />
             <Route path="/u/:userId" element={<UserProfile />} />
             <Route path="/chats" element={<Inbox />} />
-            <Route path="/chat/:chatId" element={<Chat />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/admin" element={
               <AdminRoute>
@@ -41,6 +40,12 @@ function App() {
               </AdminRoute>
             } />
           </Route>
+
+          <Route path="/chat/:chatId" element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          } />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

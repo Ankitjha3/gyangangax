@@ -67,7 +67,7 @@ const CommentSection = ({ collectionName, postId }) => {
                         senderPhoto: user.photoURL,
                         postId: postId, // Link back to post
                         timestamp: serverTimestamp(),
-                        read: false
+                        isRead: false
                     });
                 }
             }
