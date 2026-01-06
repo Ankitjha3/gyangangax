@@ -13,10 +13,12 @@ const ProtectedRoute = ({ children }) => {
     }
 
     if (!user) {
+        console.log("ProtectedRoute: No user. Redirecting to /login");
         return <Navigate to="/login" />;
     }
 
     if (!userData) {
+        console.log("ProtectedRoute: No userData. Redirecting to /profile-setup");
         return <Navigate to="/profile-setup" />;
     }
 

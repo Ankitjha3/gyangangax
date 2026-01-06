@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { auth, db, googleProvider } from "../lib/firebase";
-import { onAuthStateChanged, signInWithRedirect, signOut, getRedirectResult, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, signInWithPopup } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 const AuthContext = createContext();
@@ -13,29 +13,19 @@ export const AuthProvider = ({ children }) => {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Handle redirect result
-    useEffect(() => {
-        const checkRedirect = async () => {
-            try {
-                const result = await getRedirectResult(auth);
-                if (result?.user) {
-                    console.log("Redirect login successful:", result.user.uid);
-                }
-            } catch (error) {
-                console.error("Redirect login error:", error);
-                alert("Login failed: " + error.message);
-            }
-        };
-        checkRedirect();
-    }, []);
-
     const login = async () => {
         try {
             await setPersistence(auth, browserLocalPersistence);
-            await signInWithRedirect(auth, googleProvider);
+            // Force account selection
+            googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+            console.log("Starting popup login...");
+            const result = await signInWithPopup(auth, googleProvider);
+            console.log("Popup login success:", result.user.uid);
+            // onAuthStateChanged will handle the rest
         } catch (error) {
-            console.error("Login initiation error:", error);
-            alert("Could not start login: " + error.message);
+            console.error("Login popup error:", error);
+            alert("Login failed: " + error.message);
         }
     };
 
@@ -43,32 +33,43 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            console.log("Auth state changed:", currentUser?.uid);
+            console.log("Auth state changed. Current User UID:", currentUser?.uid);
+            // Don't set loading to true immediately if we might just be initializing
+            // But usually we want to block UI while fetching profile
             setLoading(true);
+
             try {
                 setUser(currentUser);
 
                 if (currentUser) {
                     // Fetch user profile from Firestore
+                    console.log("Fetching profile for:", currentUser.uid);
                     const userRef = doc(db, "users", currentUser.uid);
                     const userSnap = await getDoc(userRef);
+
                     if (userSnap.exists()) {
                         const data = userSnap.data();
+                        console.log("Profile found:", data);
+
                         if (data.isSuspended) {
+                            console.warn("User suspended. Signing out.");
                             await signOut(auth);
                             alert("Your account has been suspended by the admin.");
-                            return;
+                            return; // loading will be set false in finally
                         }
                         setUserData(data);
                     } else {
+                        console.log("No profile found for user.");
                         setUserData(null); // Profile not setup yet
                     }
                 } else {
+                    console.log("No user logged in.");
                     setUserData(null);
                 }
             } catch (error) {
                 console.error("Auth state handling error:", error);
             } finally {
+                console.log("Auth loading finished.");
                 setLoading(false);
             }
         });

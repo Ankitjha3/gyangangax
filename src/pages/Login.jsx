@@ -4,12 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 
 const Login = () => {
-    const { user, login } = useAuth();
+    const { user, loading, login } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (user) navigate("/");
-    }, [user, navigate]);
+        // Wait for loading to finish before making decision
+        if (!loading && user) {
+            console.log("Login page: User found and not loading. Redirecting to /");
+            navigate("/");
+        }
+    }, [user, loading, navigate]);
 
     const handleLogin = async () => {
         try {
