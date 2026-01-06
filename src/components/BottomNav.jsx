@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { HiHome, HiBookOpen, HiUsers, HiChatAlt2, HiUserCircle } from "react-icons/hi";
+import { HiHome, HiBookOpen, HiUsers, HiChatAlt2, HiUserCircle, HiHeart } from "react-icons/hi";
 import clsx from "clsx";
 import { useAuth } from "../context/AuthContext";
 

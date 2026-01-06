@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc, getCountFromServer } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { HiTrash, HiBan, HiCheckCircle, HiStar, HiSearch, HiFilter } from "react-icons/hi";
+import { HiTrash, HiBan, HiCheckCircle, HiStar, HiSearch, HiFilter, HiUsers } from "react-icons/hi";
 import PostCard from "../components/PostCard";
 import AssignmentCard from "../components/AssignmentCard";
 import RoommateCard from "../components/RoommateCard";
@@ -14,6 +14,13 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [userSearch, setUserSearch] = useState("");
+
+    const [stats, setStats] = useState({
+        pendingPayments: 0,
+        totalCollected: 0,
+        todayCollected: 0,
+        totalUsers: 0
+    });
 
     const categories = [
         { id: "posts", name: "Feed Posts" },
@@ -46,6 +53,36 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
+    }, []);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            setLoading(true);
+
+            // 1. Fetch Total Users (Switching to getDocs for reliability with existing rules)
+            try {
+                const usersColl = collection(db, "users");
+                const usersSnapshot = await getDocs(usersColl);
+                console.log("Users fetched for stats:", usersSnapshot.size);
+                setStats(prev => ({ ...prev, totalUsers: usersSnapshot.size }));
+            } catch (error) {
+                console.error("Error fetching user count stats:", error);
+            }
+
+            // 2. Fetch Payments (Disabled for now to prevent permission errors)
+            /*
+            try {
+                const paymentsQuery = query(collection(db, "payments"));
+                const snapshot = await getDocs(paymentsQuery);
+                // ... logic ...
+            } catch (error) {
+                console.error("Error fetching payment stats:", error);
+            }
+            */
+            setLoading(false);
+        };
+
+        fetchStats();
     }, []);
 
     useEffect(() => {
@@ -179,6 +216,20 @@ const AdminDashboard = () => {
                             onChange={(e) => setUserSearch(e.target.value)}
                             className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl py-2 pl-10 pr-4 focus:outline-none focus:border-red-500"
                         />
+                    </div>
+                )}
+                {activeTab === "users" && (
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-neutral-400 text-sm font-medium">Total Users</h3>
+                                <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500">
+                                    <HiUsers size={20} />
+                                </div>
+                            </div>
+                            <p className="text-3xl font-bold text-white">{stats.totalUsers}</p>
+                            <p className="text-xs text-neutral-500 mt-1">Registered members</p>
+                        </div>
                     </div>
                 )}
             </header>

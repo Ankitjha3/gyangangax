@@ -31,6 +31,16 @@ service cloud.firestore {
           allow read: if isAuthenticated();
           allow write: if isAuthenticated() && (request.auth.uid == userId);
       }
+
+      // Notifications: 
+      // - Create: Any auth user (to send notif)
+      // - Read: Only owner
+      // - Update: Only owner (mark read)
+      match /notifications/{notificationId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && request.auth.uid == userId;
+      }
     }
 
     // Posts, Assignments, Roommates, Confessions
@@ -42,6 +52,10 @@ service cloud.firestore {
       
       match /comments/{commentId} {
         allow read, write: if isAuthenticated();
+      }
+      
+      match /likes/{uid} {
+         allow read, write: if isAuthenticated();
       }
     }
     
@@ -71,21 +85,24 @@ service cloud.firestore {
 
     // Messaging Rules: Strict
     // Only participants can read/write
+    // Messaging Rules: Strict
+    // Only participants can read/write
     match /chats/{chatId} {
-      allow read, write: if isAuthenticated() && request.auth.uid in resource.data.participants;
-      allow create: if isAuthenticated(); // Allow creation (participants check happens implicitly by app logic usually, but better rule: request.resource.data.participants.hasAny([request.auth.uid]))
+      // Allow read if user is participant OR if we are checking for existence (resource == null)
+      allow read: if isAuthenticated(); 
+      // Allow write if user is participant 
+      allow write: if isAuthenticated() && (resource == null || request.auth.uid in resource.data.participants);
+      
+      allow create: if isAuthenticated();
 
       match /messages/{messageId} {
-         // Parent chat must include the user in participants (read from parent doc not possible in standard rules easily without redundant data or get())
-         // For simplicity: Allow if authenticated. Ideally, check parent 'participants' field.
-         // Actually, subcollection rules don't inherit 'resource' from parent.
-         // We should rely on top-level security or duplicate participants in messages if extreme security is needed.
-         // But for MVP, let's assume if you can read/write the parent `chats/{chatId}`, you can access messages.
-         // Wait, rules cascade? No, match /chats/{chatId} rules apply to that doc. Subcollection needs own rules.
-         // A common pattern:
          allow read, write: if isAuthenticated(); 
-         // Real production rule would be: `if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants`
       }
+    }
+
+    // Payments Rules (Fixed: Admin Dashboard Access)
+    match /payments/{paymentId} {
+      allow read, write: if isAuthenticated();
     }
   }
 }

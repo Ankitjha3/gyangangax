@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, deleteDoc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, addDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
 import EditProfileModal from "../components/EditProfileModal";
+import UserListModal from "../components/UserListModal";
 import { HiArrowLeft, HiCalendar, HiLocationMarker } from "react-icons/hi";
 import { FaInstagram, FaLinkedin, FaGithub, FaLink } from "react-icons/fa";
 
@@ -20,6 +21,7 @@ const UserProfile = () => {
     const [followingCount, setFollowingCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [listModalType, setListModalType] = useState(null); // "followers" | "following"
     const [followLoading, setFollowLoading] = useState(false);
 
     const isOwnProfile = user?.uid === userId;
@@ -134,6 +136,16 @@ const UserProfile = () => {
 
                 await updateDoc(targetUserRef, { followerCount: increment(1) });
                 await updateDoc(currentUserRef, { followingCount: increment(1) });
+
+                // Send Notification
+                await addDoc(collection(db, "users", userId, "notifications"), {
+                    type: "follow",
+                    senderId: user.uid,
+                    senderName: user.displayName || "Someone", // Profile data might not be in auth object fully, but usually displayName is there
+                    senderPhoto: user.photoURL,
+                    timestamp: serverTimestamp(),
+                    read: false
+                });
 
                 setFollowerCount(prev => prev + 1);
                 setIsFollowing(true);
@@ -268,14 +280,20 @@ const UserProfile = () => {
                 )}
 
                 <div className="flex gap-4 text-sm text-neutral-400 mb-4">
-                    <div className="flex items-center gap-1">
+                    <button
+                        onClick={() => setListModalType("following")}
+                        className="flex items-center gap-1 hover:text-white transition-colors"
+                    >
                         <span className="font-bold text-white">{followingCount}</span>
                         <span>Following</span>
-                    </div>
-                    <div className="flex items-center gap-1">
+                    </button>
+                    <button
+                        onClick={() => setListModalType("followers")}
+                        className="flex items-center gap-1 hover:text-white transition-colors"
+                    >
                         <span className="font-bold text-white">{followerCount}</span>
                         <span>Followers</span>
-                    </div>
+                    </button>
                 </div>
             </div>
 
@@ -296,6 +314,13 @@ const UserProfile = () => {
             </div>
 
             {isEditOpen && <EditProfileModal onClose={() => setIsEditOpen(false)} />}
+            {listModalType && (
+                <UserListModal
+                    userId={userId}
+                    type={listModalType}
+                    onClose={() => setListModalType(null)}
+                />
+            )}
         </div>
     );
 };

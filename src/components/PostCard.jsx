@@ -1,10 +1,10 @@
 import { formatDistanceToNow } from "date-fns";
 import { HiHeart, HiOutlineHeart, HiUserCircle, HiChatAlt, HiTrash } from "react-icons/hi";
 import { useAuth } from "../context/AuthContext";
-import { arrayRemove, arrayUnion, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, setDoc, getDoc, collection, addDoc, serverTimestamp, increment, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import CommentSection from "./CommentSection";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 
@@ -12,15 +12,74 @@ const PostCard = ({ post }) => {
     const { user } = useAuth();
     const [showComments, setShowComments] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
-    const isLiked = post.likes?.includes(user?.uid);
+    // const isLiked = post.likes?.includes(user?.uid); // This will be replaced by hasLiked state
+
+    const [hasLiked, setHasLiked] = useState(false);
+    const [localLikes, setLocalLikes] = useState(post.likes || []);
+
+    useEffect(() => {
+        // Check if the current user has liked this post
+        // This would typically involve checking a subcollection or a specific field
+        // For now, we'll assume post.likes is an array of user UIDs for initial setup
+        // If you move to a subcollection for likes, this logic will need to be updated
+        if (user && post.likes?.includes(user.uid)) {
+            setHasLiked(true);
+        } else {
+            setHasLiked(false);
+        }
+        setLocalLikes(post.likes || []);
+    }, [user, post.likes]);
+
 
     const toggleLike = async () => {
         if (!user) return;
+
         const postRef = doc(db, "posts", post.id);
-        if (isLiked) {
-            await updateDoc(postRef, { likes: arrayRemove(user.uid) });
-        } else {
-            await updateDoc(postRef, { likes: arrayUnion(user.uid) });
+        const likeRef = doc(db, "posts", post.id, "likes", user.uid);
+
+        try {
+            if (hasLiked) {
+                // Optimistic UI update
+                setLocalLikes(prev => prev.filter(id => id !== user.uid));
+                setHasLiked(false);
+
+                // Remove like
+                await updateDoc(postRef, {
+                    likes: arrayRemove(user.uid)
+                });
+                await deleteDoc(likeRef);
+            } else {
+                // Optimistic UI update
+                setLocalLikes(prev => [...prev, user.uid]);
+                setHasLiked(true);
+
+                // Add like
+                await updateDoc(postRef, {
+                    likes: arrayUnion(user.uid)
+                });
+                await setDoc(likeRef, {
+                    userId: user.uid,
+                    timestamp: serverTimestamp()
+                });
+
+                // Send Notification
+                if (post.authorId !== user.uid) {
+                    await addDoc(collection(db, "users", post.authorId, "notifications"), {
+                        type: "like",
+                        senderId: user.uid,
+                        senderName: user.displayName || user.email.split('@')[0], // Fallback
+                        senderPhoto: user.photoURL,
+                        postId: post.id,
+                        timestamp: serverTimestamp(),
+                        read: false
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Error toggling like:", error);
+            // Revert changes if error (not strictly necessary for MVP but good practice)
+            setLocalLikes(post.likes || []);
+            setHasLiked(post.likes?.includes(user.uid));
         }
     };
 
@@ -100,10 +159,10 @@ const PostCard = ({ post }) => {
             <div className="flex items-center gap-4 text-neutral-400">
                 <button
                     onClick={toggleLike}
-                    className={`flex items-center gap-1.5 transition-colors ${isLiked ? "text-pink-500" : "hover:text-pink-500"}`}
+                    className={`flex items-center gap-1.5 transition-colors ${hasLiked ? "text-pink-500" : "hover:text-pink-500"}`}
                 >
-                    {isLiked ? <HiHeart size={20} /> : <HiOutlineHeart size={20} />}
-                    <span className="text-sm">{post.likes?.length || 0}</span>
+                    {hasLiked ? <HiHeart size={20} /> : <HiOutlineHeart size={20} />}
+                    <span className="text-sm">{localLikes.length}</span>
                 </button>
 
                 <button

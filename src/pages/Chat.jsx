@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc, updateDoc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc, updateDoc, deleteDoc, limit, getDocs, arrayUnion } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
-import { HiArrowLeft, HiPaperAirplane } from "react-icons/hi";
+import { HiArrowLeft, HiPaperAirplane, HiTrash } from "react-icons/hi";
+import { format } from "date-fns";
 
 const Chat = () => {
     const { chatId } = useParams();
@@ -31,6 +32,13 @@ const Chat = () => {
                         setOtherUser({ id: otherUserId, ...userSnap.data() });
                     }
                 }
+
+                // Mark as read by adding user to readBy array
+                // Using updateDoc directly without waiting to prevent blocking UI
+                updateDoc(doc(db, "chats", chatId), {
+                    readBy: arrayUnion(user.uid)
+                }).catch(err => console.error("Error marking chat read:", err));
+
             } else {
                 navigate("/chats"); // Chat not found
             }
@@ -73,7 +81,8 @@ const Chat = () => {
             await updateDoc(doc(db, "chats", chatId), {
                 lastMessage: text,
                 lastMessageBy: user.uid,
-                lastMessageTimestamp: serverTimestamp()
+                lastMessageTimestamp: serverTimestamp(),
+                readBy: [user.uid] // Reset readBy to only sender (unread for others)
             });
         } catch (error) {
             console.error("Error sending message:", error);
@@ -81,34 +90,70 @@ const Chat = () => {
         }
     };
 
+    const handleDeleteMessage = async (messageId) => {
+        if (!confirm("Unsend this message?")) return;
+        try {
+            await deleteDoc(doc(db, "chats", chatId, "messages", messageId));
+
+            // Fetch the new last message to update the main chat document
+            const lastMsgQuery = query(
+                collection(db, "chats", chatId, "messages"),
+                orderBy("timestamp", "desc"),
+                limit(1)
+            );
+
+            const lastMsgSnap = await getDocs(lastMsgQuery);
+
+            if (!lastMsgSnap.empty) {
+                const newLastMsg = lastMsgSnap.docs[0].data();
+                await updateDoc(doc(db, "chats", chatId), {
+                    lastMessage: newLastMsg.text,
+                    lastMessageBy: newLastMsg.senderId,
+                    lastMessageTimestamp: newLastMsg.timestamp
+                });
+            } else {
+                // If no messages left, clear the last message data
+                await updateDoc(doc(db, "chats", chatId), {
+                    lastMessage: "",
+                    lastMessageBy: "",
+                    lastMessageTimestamp: null
+                });
+            }
+        } catch (error) {
+            console.error("Error deleting message:", error);
+        }
+    };
+
     if (loading) return <div className="flex justify-center pt-20 text-neutral-500">Loading chat...</div>;
 
     return (
-        <div className="flex flex-col h-screen bg-black">
-            {/* Header */}
-            <header className="flex items-center gap-3 p-4 bg-neutral-900 border-b border-neutral-800">
-                <Link to="/chats" className="p-2 rounded-full hover:bg-neutral-800 text-white">
-                    <HiArrowLeft size={20} />
+        <div className="flex flex-col h-full bg-black">
+            <header className="flex items-center gap-4 py-3 px-4 bg-neutral-900 border-b border-neutral-800 shrink-0">
+                <Link to="/chats" className="text-neutral-400 hover:text-white">
+                    <HiArrowLeft size={24} />
                 </Link>
                 {otherUser && (
-                    <Link to={`/u/${otherUser.id}`} className="flex items-center gap-3 flex-1 hover:bg-neutral-800/50 p-1 rounded-lg transition-colors">
-                        <div className="w-10 h-10 rounded-full bg-neutral-800 overflow-hidden border border-neutral-700">
-                            <img
-                                src={otherUser.photoUrl || `https://ui-avatars.com/api/?name=${otherUser.name}&background=random`}
-                                alt={otherUser.name}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
+                    <Link to={`/u/${otherUser?.id}`} className="flex items-center gap-3 flex-1">
+                        <img
+                            src={otherUser?.photoUrl || `https://ui-avatars.com/api/?name=${otherUser?.name || "User"}&background=random`}
+                            alt="Avatar"
+                            className="w-10 h-10 rounded-full object-cover"
+                        />
                         <div>
-                            <h2 className="font-bold text-white text-sm">{otherUser.name}</h2>
-                            <p className="text-[10px] text-green-500 font-medium">Online</p>
+                            <h2 className="font-bold text-white leading-tight">
+                                {otherUser?.name || "Chat"}
+                            </h2>
+                            {/* Simple online status indicator (mock) */}
+                            <span className="text-[10px] text-green-500 font-medium flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                Online
+                            </span>
                         </div>
                     </Link>
                 )}
             </header>
 
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-black">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
                 {messages.length === 0 && (
                     <div className="text-center py-10 text-neutral-600">
                         <p className="text-sm">No messages yet.</p>
@@ -118,18 +163,29 @@ const Chat = () => {
                 {messages.map((msg) => {
                     const isMe = msg.senderId === user.uid;
                     return (
-                        <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                        <div
+                            key={msg.id}
+                            className={`flex items-center gap-2 mb-1 ${isMe ? "justify-end" : "justify-start"} group`}
+                        >
+                            {isMe && (
+                                <button
+                                    onClick={() => handleDeleteMessage(msg.id)}
+                                    className="p-2 text-neutral-500 hover:text-red-500 transition-all z-10 bg-neutral-900/80 rounded-full"
+                                    title="Unsend"
+                                >
+                                    <HiTrash size={14} />
+                                </button>
+                            )}
+
                             <div
                                 className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${isMe
-                                        ? "bg-blue-600 text-white rounded-br-none"
-                                        : "bg-neutral-800 text-neutral-200 rounded-bl-none"
+                                    ? "bg-blue-600 text-white rounded-br-none"
+                                    : "bg-neutral-800 text-neutral-200 rounded-bl-none"
                                     }`}
                             >
-                                <p className="break-words">{msg.text}</p>
-                                <p className={`text-[9px] mt-1 text-right ${isMe ? "text-blue-200" : "text-neutral-500"}`}>
-                                    {msg.timestamp?.seconds
-                                        ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                        : "..."}
+                                {msg.text}
+                                <p className={`text-[10px] mt-1 text-right ${isMe ? "text-blue-200" : "text-neutral-500"}`}>
+                                    {msg.timestamp?.seconds ? format(new Date(msg.timestamp.seconds * 1000), "HH:mm") : "..."}
                                 </p>
                             </div>
                         </div>
@@ -138,22 +194,23 @@ const Chat = () => {
                 <div ref={scrollRef} />
             </div>
 
-            {/* Input Area */}
-            <form onSubmit={handleSendMessage} className="p-4 bg-neutral-900 border-t border-neutral-800 flex gap-2">
-                <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1 bg-neutral-950 border border-neutral-800 text-white rounded-full px-4 py-2 focus:outline-none focus:border-blue-500 transition-colors"
-                />
-                <button
-                    type="submit"
-                    disabled={!newMessage.trim()}
-                    className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                    <HiPaperAirplane className="rotate-90 ml-0.5" size={20} />
-                </button>
+            <form onSubmit={handleSendMessage} className="p-3 bg-neutral-900 border-t border-neutral-800 shrink-0">
+                <div className="flex items-center gap-2 bg-neutral-950 rounded-full px-4 py-2 border border-neutral-800 focus-within:border-blue-500 transition-colors">
+                    <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Type a message..."
+                        className="flex-1 bg-transparent text-white placeholder-neutral-500 focus:outline-none text-sm"
+                    />
+                    <button
+                        type="submit"
+                        disabled={!newMessage.trim()}
+                        className="p-2 bg-blue-600 rounded-full text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-500 transition-colors"
+                    >
+                        <HiPaperAirplane size={16} className="rotate-90" />
+                    </button>
+                </div>
             </form>
         </div>
     );

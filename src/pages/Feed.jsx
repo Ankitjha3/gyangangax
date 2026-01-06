@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, limit, onSnapshot, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import { useAuth } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
 import CreatePostModal from "../components/CreatePostModal";
 import { HiPlus } from "react-icons/hi";
 
 import { useNavigate } from "react-router-dom";
-import { HiSearch, HiPaperAirplane } from "react-icons/hi";
+import { HiSearch, HiPaperAirplane, HiHeart } from "react-icons/hi";
 import UserSearchModal from "../components/UserSearchModal";
 
 const Feed = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -17,6 +19,10 @@ const Feed = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showSearchModal, setShowSearchModal] = useState(false);
 
+    const [hasUnreadNotifs, setHasUnreadNotifs] = useState(false);
+    const [hasUnreadMsgs, setHasUnreadMsgs] = useState(false);
+
+    // Feed Listener
     useEffect(() => {
         const q = query(
             collection(db, "posts"),
@@ -37,6 +43,39 @@ const Feed = () => {
         return unsubscribe;
     }, []);
 
+    // Unread Indicators Listener
+    useEffect(() => {
+        if (!user) return;
+
+        // 1. Unread Notifications
+        const notifQ = query(
+            collection(db, "users", user.uid, "notifications"),
+            where("isRead", "!=", true) // Check for false or undefined
+        );
+        const unsubNotifs = onSnapshot(notifQ, (snap) => {
+            setHasUnreadNotifs(!snap.empty);
+        });
+
+        // 2. Unread Messages
+        const chatsQ = query(
+            collection(db, "chats"),
+            where("participants", "array-contains", user.uid)
+        );
+        const unsubChats = onSnapshot(chatsQ, (snap) => {
+            // Check if any chat has a last message AND user is NOT in readBy
+            const unread = snap.docs.some(doc => {
+                const data = doc.data();
+                return data.lastMessage && (!data.readBy || !data.readBy.includes(user.uid));
+            });
+            setHasUnreadMsgs(unread);
+        });
+
+        return () => {
+            unsubNotifs();
+            unsubChats();
+        };
+    }, [user]);
+
     return (
         <div className="pb-20 pt-4 px-4 min-h-screen">
             <header className="flex justify-between items-center mb-6 sticky top-0 bg-neutral-950/80 backdrop-blur-md py-4 z-10 -mx-4 px-4 border-b border-neutral-800/50">
@@ -52,9 +91,17 @@ const Feed = () => {
                     </button>
                     <button
                         onClick={() => navigate("/chats")}
-                        className="p-2 rounded-full hover:bg-neutral-800 text-neutral-300 rotate-90"
+                        className="p-2 rounded-full hover:bg-neutral-800 text-neutral-300 relative"
                     >
-                        <HiPaperAirplane size={24} />
+                        <HiPaperAirplane size={24} className="rotate-90" />
+                        {hasUnreadMsgs && <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-neutral-900"></span>}
+                    </button>
+                    <button
+                        onClick={() => navigate("/notifications")}
+                        className="p-2 rounded-full hover:bg-neutral-800 text-neutral-300 relative"
+                    >
+                        <HiHeart size={24} />
+                        {hasUnreadNotifs && <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-neutral-900"></span>}
                     </button>
                 </div>
             </header>

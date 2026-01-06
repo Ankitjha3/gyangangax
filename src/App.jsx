@@ -14,6 +14,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 import AdminRoute from "./components/AdminRoute";
 import Inbox from "./pages/Inbox";
 import Chat from "./pages/Chat";
+import NotificationsPage from "./pages/NotificationsPage";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/u/:userId" element={<UserProfile />} />
             <Route path="/chats" element={<Inbox />} />
             <Route path="/chat/:chatId" element={<Chat />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/admin" element={
               <AdminRoute>
                 <Suspense fallback={<div className="p-10 text-center">Loading Admin...</div>}>

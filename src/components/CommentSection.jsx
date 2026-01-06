@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, increment, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, increment, deleteDoc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { formatDistanceToNow } from "date-fns";
@@ -46,6 +46,31 @@ const CommentSection = ({ collectionName, postId }) => {
             await updateDoc(parentRef, {
                 commentCount: increment(1)
             });
+
+            // Send Notification
+            // Need to know post author ID. It's passed as prop or we need to fetch it?
+            // "collectionName" implies we might be on a post or something else.
+            // Assuming postId allows us to fetch the post, or we can pass authorId as prop to CommentSection to avoid extra fetch.
+            // For now, let's fetch the parent doc to get authorId if we don't have it.
+            // Optimization: Pass authorId to CommentSection. But let's check current usage.
+            // PostCard passes simple props.
+            // Let's do a quick fetch of parent doc to be safe and versatile.
+
+            const parentSnap = await getDoc(parentRef);
+            if (parentSnap.exists()) {
+                const parentData = parentSnap.data();
+                if (parentData.authorId && parentData.authorId !== user.uid) {
+                    await addDoc(collection(db, "users", parentData.authorId, "notifications"), {
+                        type: "comment",
+                        senderId: user.uid,
+                        senderName: userData?.name || "Anonymous",
+                        senderPhoto: user.photoURL,
+                        postId: postId, // Link back to post
+                        timestamp: serverTimestamp(),
+                        read: false
+                    });
+                }
+            }
 
             setNewComment("");
         } catch (error) {

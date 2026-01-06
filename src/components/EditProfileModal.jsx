@@ -43,7 +43,7 @@ const EditProfileModal = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200 max-h-[85vh] overflow-y-auto">
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-neutral-400 hover:text-white transition-colors"

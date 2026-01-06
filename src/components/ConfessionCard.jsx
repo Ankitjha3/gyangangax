@@ -16,8 +16,9 @@ const ConfessionCard = ({ post }) => {
         const postRef = doc(db, "confessions", post.id);
 
         // Find if user has already reacted with any emoji
-        const currentEmoji = Object.keys(post.reactions || {}).find(key =>
-            post.reactions[key]?.includes(user.uid)
+        const reactions = post.reactions || {};
+        const currentEmoji = Object.keys(reactions).find(key =>
+            reactions[key]?.includes(user.uid)
         );
 
         if (currentEmoji === emoji) {
@@ -54,8 +55,8 @@ const ConfessionCard = ({ post }) => {
             <p className="text-xs text-purple-400 font-bold tracking-widest uppercase mb-2">Anonymous Confession</p>
 
             <p className="text-white font-serif text-lg leading-relaxed mb-4 whitespace-pre-wrap">
-                "{isExpanded || post.text.length <= 250 ? (
-                    post.text
+                "{isExpanded || (post.text || "").length <= 250 ? (
+                    post.text || ""
                 ) : (
                     <>
                         {post.text.substring(0, 250)}...
