@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { auth, db, googleProvider } from "../lib/firebase";
-import { onAuthStateChanged, signInWithRedirect, signOut } from "firebase/auth";
+import { onAuthStateChanged, signInWithRedirect, signOut, getRedirectResult } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 const AuthContext = createContext();
@@ -12,6 +12,18 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    // Handle redirect result explicitly
+    useEffect(() => {
+        const checkRedirect = async () => {
+            try {
+                await getRedirectResult(auth);
+            } catch (error) {
+                console.error("Redirect login error:", error);
+            }
+        };
+        checkRedirect();
+    }, []);
 
     const login = () => signInWithRedirect(auth, googleProvider);
     const logout = () => signOut(auth);
