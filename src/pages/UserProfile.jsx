@@ -123,8 +123,7 @@ const UserProfile = () => {
                 await updateDoc(targetUserRef, { followerCount: increment(-1) });
                 await updateDoc(currentUserRef, { followingCount: increment(-1) });
 
-                setFollowerCount(prev => prev - 1);
-                setIsFollowing(false);
+                // State updates are handled by onSnapshot listener
             } else {
                 // Follow
                 await setDoc(doc(db, "users", userId, "followers", user.uid), { timestamp: serverTimestamp() });
@@ -143,8 +142,7 @@ const UserProfile = () => {
                     isRead: false
                 });
 
-                setFollowerCount(prev => prev + 1);
-                setIsFollowing(true);
+                // State updates are handled by onSnapshot listener
             }
         } catch (error) {
             console.error("Error updating follow status:", error);

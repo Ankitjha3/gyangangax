@@ -293,6 +293,12 @@ const AdminDashboard = () => {
                                                 <div className="flex items-center gap-2">
                                                     <h3 className="font-bold text-white">{user.name}</h3>
                                                     {user.isSuspended && <span className="text-[10px] bg-red-900/50 text-red-500 px-2 rounded">SUSPENDED</span>}
+                                                    {user.createdAt?.seconds && (new Date() - new Date(user.createdAt.seconds * 1000) < 24 * 60 * 60 * 1000) && (
+                                                        <span className="flex items-center gap-1 text-[10px] bg-blue-900/50 text-blue-400 px-2 rounded-full border border-blue-800 animate-pulse">
+                                                            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+                                                            New
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <p className="text-xs text-neutral-500">{user.email}</p>
                                                 <p className="text-xs text-neutral-600">{user.branch} • {user.year}</p>
