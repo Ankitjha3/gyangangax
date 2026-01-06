@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, addDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, addDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
@@ -27,57 +27,53 @@ const UserProfile = () => {
     const isOwnProfile = user?.uid === userId;
 
     // Fetch Profile Data & Stats
+    // Fetch Profile Data & Stats (Real-time)
     useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                // Get User Data
-                const userRef = doc(db, "users", userId);
-                const userSnap = await getDoc(userRef);
+        if (!userId) return;
+        setLoading(true);
 
-                if (userSnap.exists()) {
-                    const data = userSnap.data();
-                    setProfileData(data);
-                    setFollowerCount(data.followerCount || 0);
-                    setFollowingCount(data.followingCount || 0);
-                } else {
-                    setProfileData(null); // User not found
-                }
-            } catch (error) {
-                console.error("Error fetching profile:", error);
+        const userRef = doc(db, "users", userId);
+        const unsubUser = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setProfileData(data);
+                setFollowerCount(data.followerCount || 0);
+                setFollowingCount(data.followingCount || 0);
+            } else {
+                setProfileData(null);
             }
-        };
+            setLoading(false); // First load done
+        }, (error) => {
+            console.error("Error fetching profile:", error);
+            setLoading(false);
+        });
 
-        const fetchPosts = async () => {
-            try {
-                const q = query(
-                    collection(db, "posts"),
-                    where("authorId", "==", userId),
-                    orderBy("timestamp", "desc")
-                );
-                const snapshot = await getDocs(q);
-                setPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            } catch (error) {
-                console.error("Error fetching posts:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+        const postsQ = query(
+            collection(db, "posts"),
+            where("authorId", "==", userId),
+            orderBy("timestamp", "desc")
+        );
 
-        // Check if following
-        const checkFollowing = async () => {
-            if (user && !isOwnProfile) {
-                const followRef = doc(db, "users", userId, "followers", user.uid);
-                const followSnap = await getDoc(followRef);
-                setIsFollowing(followSnap.exists());
-            }
-        };
+        const unsubPosts = onSnapshot(postsQ, (snapshot) => {
+            setPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        }, (error) => {
+            console.error("Error fetching posts:", error);
+        });
 
-        if (userId) {
-            setLoading(true);
-            fetchProfile();
-            fetchPosts();
-            checkFollowing();
+        // Check following status (Real-time)
+        let unsubFollow = () => { };
+        if (user && !isOwnProfile) {
+            const followRef = doc(db, "users", userId, "followers", user.uid);
+            unsubFollow = onSnapshot(followRef, (snap) => {
+                setIsFollowing(snap.exists());
+            });
         }
+
+        return () => {
+            unsubUser();
+            unsubPosts();
+            unsubFollow();
+        };
     }, [userId, user, isOwnProfile]);
 
     const handleMessage = async () => {
@@ -144,7 +140,7 @@ const UserProfile = () => {
                     senderName: user.displayName || "Someone", // Profile data might not be in auth object fully, but usually displayName is there
                     senderPhoto: user.photoURL,
                     timestamp: serverTimestamp(),
-                    read: false
+                    isRead: false
                 });
 
                 setFollowerCount(prev => prev + 1);
