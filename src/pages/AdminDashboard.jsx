@@ -157,6 +157,56 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleVerifyUser = async (userId, currentStatus) => {
+        try {
+            await updateDoc(doc(db, "users", userId), {
+                isVerified: !currentStatus
+            });
+            setUsers(users.map(u => u.id === userId ? { ...u, isVerified: !currentStatus } : u));
+        } catch (error) {
+            console.error("Error verifying user:", error);
+        }
+    };
+
+    const handleSyncBadges = async () => {
+        if (!confirm("This will update ALL posts to reflect the current Verified status of their authors. Continue?")) return;
+        setLoading(true);
+        try {
+            // 1. Get all users to map their status
+            const usersSnap = await getDocs(collection(db, "users"));
+            const verifiedUserIds = new Set();
+            usersSnap.docs.forEach(doc => {
+                if (doc.data().isVerified) verifiedUserIds.add(doc.id);
+            });
+
+            // 2. Get all posts
+            const postsSnap = await getDocs(collection(db, "posts"));
+            let updateCount = 0;
+
+            const updates = postsSnap.docs.map(async (docSnap) => {
+                const post = docSnap.data();
+                const shouldBeVerified = verifiedUserIds.has(post.authorId);
+
+                // Only update if different
+                if (post.authorVerified !== shouldBeVerified) {
+                    await updateDoc(doc(db, "posts", docSnap.id), {
+                        authorVerified: shouldBeVerified
+                    });
+                    updateCount++;
+                }
+            });
+
+            await Promise.all(updates);
+            alert(`Synced badges for ${updateCount} posts!`);
+            fetchContent();
+        } catch (error) {
+            console.error("Error syncing badges:", error);
+            alert("Error syncing badges. See console.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const filteredUsers = users.filter(user =>
         user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
         user.email?.toLowerCase().includes(userSearch.toLowerCase())
@@ -196,12 +246,20 @@ const AdminDashboard = () => {
                             </button>
                         ))}
                         {contentCategory === "posts" && (
-                            <button
-                                onClick={handleMigratePosts}
-                                className="px-4 py-2 text-xs font-bold rounded-full bg-orange-600/20 text-orange-500 border border-orange-600/50 whitespace-nowrap"
-                            >
-                                Fix Feed
-                            </button>
+                            <>
+                                <button
+                                    onClick={handleMigratePosts}
+                                    className="px-4 py-2 text-xs font-bold rounded-full bg-orange-600/20 text-orange-500 border border-orange-600/50 whitespace-nowrap"
+                                >
+                                    Fix Feed
+                                </button>
+                                <button
+                                    onClick={handleSyncBadges}
+                                    className="px-4 py-2 text-xs font-bold rounded-full bg-blue-600/20 text-blue-500 border border-blue-600/50 whitespace-nowrap"
+                                >
+                                    Sync Badges
+                                </button>
+                            </>
                         )}
                     </div>
                 )}
@@ -293,6 +351,7 @@ const AdminDashboard = () => {
                                                 <div className="flex items-center gap-2">
                                                     <h3 className="font-bold text-white">{user.name}</h3>
                                                     {user.isSuspended && <span className="text-[10px] bg-red-900/50 text-red-500 px-2 rounded">SUSPENDED</span>}
+                                                    {user.isVerified && <HiCheckCircle className="text-blue-500" size={16} />}
                                                     {user.createdAt?.seconds && (new Date() - new Date(user.createdAt.seconds * 1000) < 24 * 60 * 60 * 1000) && (
                                                         <span className="flex items-center gap-1 text-[10px] bg-blue-900/50 text-blue-400 px-2 rounded-full border border-blue-800 animate-pulse">
                                                             <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
@@ -304,12 +363,21 @@ const AdminDashboard = () => {
                                                 <p className="text-xs text-neutral-600">{user.branch} • {user.year}</p>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => handleSuspendUser(user.id, user.isSuspended)}
-                                            className={`p-2 rounded-lg font-medium text-sm transition-colors ${user.isSuspended ? "bg-green-900/20 text-green-500 border border-green-900" : "bg-red-900/20 text-red-500 border border-red-900"}`}
-                                        >
-                                            {user.isSuspended ? "Unsuspend" : "Suspend"}
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleVerifyUser(user.id, user.isVerified)}
+                                                className={`p-2 rounded-lg font-medium text-sm transition-colors ${user.isVerified ? "bg-blue-900/20 text-blue-500 border border-blue-900" : "bg-neutral-800 text-neutral-400 border border-neutral-700 hover:text-blue-500"}`}
+                                                title={user.isVerified ? "Unverify User" : "Verify User"}
+                                            >
+                                                <HiCheckCircle size={20} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleSuspendUser(user.id, user.isSuspended)}
+                                                className={`p-2 rounded-lg font-medium text-sm transition-colors ${user.isSuspended ? "bg-green-900/20 text-green-500 border border-green-900" : "bg-red-900/20 text-red-500 border border-red-900"}`}
+                                            >
+                                                {user.isSuspended ? "Unsuspend" : "Suspend"}
+                                            </button>
+                                        </div>
                                     </div>
                                 ))
                             )}

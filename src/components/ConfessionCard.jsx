@@ -54,29 +54,29 @@ const ConfessionCard = ({ post }) => {
         <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 border-l-4 border-l-purple-600 rounded-r-xl p-5 mb-4 shadow-lg">
             <p className="text-xs text-purple-400 font-bold tracking-widest uppercase mb-2">Anonymous Confession</p>
 
-            <p className="text-white font-serif text-lg leading-relaxed mb-4 whitespace-pre-wrap">
-                "{isExpanded || (post.text || "").length <= 250 ? (
-                    post.text || ""
-                ) : (
-                    <>
-                        {post.text.substring(0, 250)}...
+            <div className={`relative mb-4 ${!isExpanded ? 'max-h-[8.5em] overflow-hidden' : ''}`}>
+                <p className={`text-white font-serif text-lg leading-relaxed whitespace-pre-wrap ${!isExpanded ? 'line-clamp-5' : ''}`}>
+                    "{post.text || ""}"
+                </p>
+                {!isExpanded && (post.text || "").length > 150 && (
+                    <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-neutral-900 to-transparent flex items-end">
                         <button
                             onClick={() => setIsExpanded(true)}
-                            className="text-purple-400 hover:text-purple-300 ml-1 text-base font-bold underline"
+                            className="text-purple-400 hover:text-purple-300 font-bold text-sm bg-neutral-900 px-2 py-0.5 rounded"
                         >
                             Read More
                         </button>
-                    </>
-                )}"
-                {isExpanded && post.text.length > 250 && (
-                    <button
-                        onClick={() => setIsExpanded(false)}
-                        className="text-neutral-500 hover:text-neutral-400 block mt-1 text-xs font-medium hover:underline"
-                    >
-                        Show Less
-                    </button>
+                    </div>
                 )}
-            </p>
+            </div>
+            {isExpanded && (
+                <button
+                    onClick={() => setIsExpanded(false)}
+                    className="text-neutral-500 hover:text-neutral-400 text-xs font-medium mb-4 hover:underline"
+                >
+                    Show Less
+                </button>
+            )}
 
             <div className="flex justify-between items-end">
                 <div className="flex gap-2">

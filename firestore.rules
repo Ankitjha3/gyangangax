@@ -18,7 +18,10 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Allow write if it's the user themselves OR if it's just a followerCount update
       allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && (request.auth.uid == userId || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followerCount']));
+      allow update: if isAuthenticated() && (
+        request.auth.uid == userId || 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followerCount', 'isVerified', 'isSuspended'])
+      );
       allow delete: if isAuthenticated() && request.auth.uid == userId;
 
       // Subcollections for social graph

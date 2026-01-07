@@ -32,6 +32,8 @@ const CreatePostModal = ({ onClose }) => {
                 authorId: user.uid,
                 authorName: userData.name,
                 authorPhoto: userData.photoURL,
+                authorVerified: userData?.isVerified || false, // Add Verified Status
+                viewedBy: [user.uid], // Creator automatically views it
                 isAnonymous,
                 likes: [],
                 isPinned: false, // Default for sorting

@@ -37,8 +37,7 @@ const CreateConfessionModal = ({ onClose }) => {
                     <HiX size={24} />
                 </button>
 
-                <h2 className="text-xl font-bold mb-2 text-purple-400">Secret Confession</h2>
-                <p className="text-neutral-500 text-xs mb-6">Your name will be hidden forever. Admin visible.</p>
+                <h2 className="text-xl font-bold mb-6 text-purple-400">Secret Confession</h2>
 
                 <form onSubmit={handleSubmit}>
                     <textarea

@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from "date-fns";
-import { HiHeart, HiOutlineHeart, HiUserCircle, HiChatAlt, HiTrash } from "react-icons/hi";
+import { HiHeart, HiOutlineHeart, HiUserCircle, HiChatAlt, HiTrash, HiEye, HiCheckCircle } from "react-icons/hi";
 import { useAuth } from "../context/AuthContext";
 import { doc, updateDoc, deleteDoc, setDoc, getDoc, collection, addDoc, serverTimestamp, increment, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -12,16 +12,35 @@ const PostCard = ({ post }) => {
     const { user } = useAuth();
     const [showComments, setShowComments] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
-    // const isLiked = post.likes?.includes(user?.uid); // This will be replaced by hasLiked state
 
     const [hasLiked, setHasLiked] = useState(false);
     const [localLikes, setLocalLikes] = useState(post.likes || []);
 
+    // View Counting Logic
     useEffect(() => {
-        // Check if the current user has liked this post
-        // This would typically involve checking a subcollection or a specific field
-        // For now, we'll assume post.likes is an array of user UIDs for initial setup
-        // If you move to a subcollection for likes, this logic will need to be updated
+        const incrementView = async () => {
+            if (!user || !post.id) return;
+
+            // Simple check: if already viewed, don't write.
+            // Note: post.viewedBy comes from DB. For strict real-time View deduplication on client refresh,
+            // we rely on the `post` prop being updated via onSnapshot in Feed.
+            if (post.viewedBy?.includes(user.uid)) return;
+
+            try {
+                const postRef = doc(db, "posts", post.id);
+                // Fire and forget
+                updateDoc(postRef, {
+                    viewedBy: arrayUnion(user.uid)
+                });
+            } catch (err) {
+                console.error("Error tracking view:", err);
+            }
+        };
+
+        incrementView();
+    }, [user, post.id, post.viewedBy]);
+
+    useEffect(() => {
         if (user && post.likes?.includes(user.uid)) {
             setHasLiked(true);
         } else {
@@ -109,15 +128,18 @@ const PostCard = ({ post }) => {
                     </Link>
                 )}
                 <div>
-                    <p className="font-semibold text-sm">
-                        {post.isAnonymous ? (
-                            "Anonymous GG Student"
-                        ) : (
-                            <Link to={`/u/${post.authorId}`} className="hover:underline">
-                                {post.authorName}
-                            </Link>
-                        )}
-                    </p>
+                    <div className="flex items-center gap-1">
+                        <p className="font-semibold text-sm">
+                            {post.isAnonymous ? (
+                                "Anonymous GG Student"
+                            ) : (
+                                <Link to={`/u/${post.authorId}`} className="hover:underline flex items-center gap-1">
+                                    {post.authorName}
+                                    {post.authorVerified && <HiCheckCircle className="text-blue-500" size={16} title="Verified Student" />}
+                                </Link>
+                            )}
+                        </p>
+                    </div>
                     <p className="text-xs text-neutral-500">
                         {post.timestamp?.seconds
                             ? formatDistanceToNow(new Date(post.timestamp.seconds * 1000), { addSuffix: true })
@@ -173,10 +195,15 @@ const PostCard = ({ post }) => {
                     <span className="text-sm">{post.commentCount || 0}</span>
                 </button>
 
+                <div className="flex items-center gap-1.5 text-neutral-500 ml-auto mr-2">
+                    <HiEye size={20} />
+                    <span className="text-sm">{post.viewedBy?.length || 0}</span>
+                </div>
+
                 {user?.uid === post.authorId && (
                     <button
                         onClick={handleDelete}
-                        className="flex items-center gap-1.5 transition-colors text-neutral-600 hover:text-red-500 ml-auto"
+                        className="flex items-center gap-1.5 transition-colors text-neutral-600 hover:text-red-500"
                         title="Delete Post"
                     >
                         <HiTrash size={18} />

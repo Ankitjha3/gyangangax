@@ -127,7 +127,8 @@ const CommentSection = ({ collectionName, postId }) => {
                                                 : "Just now"}
                                         </span>
                                     </div>
-                                    {user?.uid === comment.authorId && (
+                                    {/* Admin or Author can delete */}
+                                    {(user?.uid === comment.authorId || userData?.email === "ajha10597@gmail.com" || userData?.role === "admin") && (
                                         <button
                                             onClick={() => handleDeleteComment(comment.id)}
                                             className="text-neutral-500 hover:text-red-400 transition-colors p-1"
