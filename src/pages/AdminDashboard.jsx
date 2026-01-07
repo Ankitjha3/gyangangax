@@ -359,7 +359,7 @@ const AdminDashboard = () => {
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-neutral-500">{user.email}</p>
+                                                <p className="text-xs text-neutral-500 truncate max-w-[150px] sm:max-w-xs">{user.email}</p>
                                                 <p className="text-xs text-neutral-600">{user.branch} • {user.year}</p>
                                             </div>
                                         </div>
@@ -373,9 +373,10 @@ const AdminDashboard = () => {
                                             </button>
                                             <button
                                                 onClick={() => handleSuspendUser(user.id, user.isSuspended)}
-                                                className={`p-2 rounded-lg font-medium text-sm transition-colors ${user.isSuspended ? "bg-green-900/20 text-green-500 border border-green-900" : "bg-red-900/20 text-red-500 border border-red-900"}`}
+                                                className={`w-9 h-9 flex items-center justify-center rounded-lg font-bold text-sm transition-colors ${user.isSuspended ? "bg-green-900/20 text-green-500 border border-green-900" : "bg-red-900/20 text-red-500 border border-red-900"}`}
+                                                title={user.isSuspended ? "Unsuspend User" : "Suspend User"}
                                             >
-                                                {user.isSuspended ? "Unsuspend" : "Suspend"}
+                                                {user.isSuspended ? "U" : "S"}
                                             </button>
                                         </div>
                                     </div>
