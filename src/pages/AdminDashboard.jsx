@@ -45,7 +45,7 @@ const AdminDashboard = () => {
     const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
-            const q = query(collection(db, "users"));
+            const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
             const snapshot = await getDocs(q);
             setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         } catch (error) {

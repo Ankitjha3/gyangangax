@@ -2,14 +2,16 @@ import { formatDistanceToNow } from "date-fns";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
-import { HiTrash } from "react-icons/hi";
+import { HiTrash, HiChatAlt } from "react-icons/hi";
 import { useState } from "react";
+import CommentSection from "./CommentSection";
 
 const emojis = ["❤️", "😂", "😮", "😢", "😡"];
 
 const ConfessionCard = ({ post }) => {
     const { user } = useAuth();
     const [isExpanded, setIsExpanded] = useState(false);
+    const [showComments, setShowComments] = useState(false);
 
     const handleReaction = async (emoji) => {
         if (!user) return;
@@ -94,6 +96,13 @@ const ConfessionCard = ({ post }) => {
                             </button>
                         );
                     })}
+                    <button
+                        onClick={() => setShowComments(!showComments)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all ${showComments ? "bg-white/20 text-white" : "text-neutral-500 hover:bg-white/10"}`}
+                    >
+                        <HiChatAlt size={14} />
+                        <span>{post.commentCount || 0}</span>
+                    </button>
                 </div>
                 <span className="text-[10px] text-neutral-500">
                     {post.timestamp?.seconds ? formatDistanceToNow(new Date(post.timestamp.seconds * 1000), { addSuffix: true }) : "Just now"}
@@ -109,6 +118,9 @@ const ConfessionCard = ({ post }) => {
                     </button>
                 )}
             </div>
+            {showComments && (
+                <CommentSection collectionName="confessions" postId={post.id} isAnonymous={true} />
+            )}
         </div>
     );
 };

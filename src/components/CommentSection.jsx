@@ -7,7 +7,7 @@ import { HiPaperAirplane, HiTrash } from "react-icons/hi";
 // eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from "framer-motion";
 
-const CommentSection = ({ collectionName, postId }) => {
+const CommentSection = ({ collectionName, postId, isAnonymous = false }) => {
     const { user, userData } = useAuth();
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
@@ -37,7 +37,7 @@ const CommentSection = ({ collectionName, postId }) => {
             await addDoc(collection(db, collectionName, postId, "comments"), {
                 text: newComment,
                 authorId: user.uid,
-                authorName: userData?.name || "Anonymous",
+                authorName: isAnonymous ? "Anonymous" : (userData?.name || "Anonymous"),
                 timestamp: serverTimestamp(),
             });
 
@@ -63,7 +63,7 @@ const CommentSection = ({ collectionName, postId }) => {
                     await addDoc(collection(db, "users", parentData.authorId, "notifications"), {
                         type: "comment",
                         senderId: user.uid,
-                        senderName: userData?.name || "Anonymous",
+                        senderName: isAnonymous ? "Anonymous" : (userData?.name || "Anonymous"),
                         senderPhoto: user.photoURL,
                         postId: postId, // Link back to post
                         timestamp: serverTimestamp(),
