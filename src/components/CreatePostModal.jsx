@@ -2,8 +2,7 @@ import { useState, useRef } from "react";
 import { HiX, HiPhotograph, HiShieldCheck } from "react-icons/hi";
 import { useAuth } from "../context/AuthContext";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, uploadBytesResumable, uploadString } from "firebase/storage";
-import { db, storage } from "../lib/firebase";
+import { db } from "../lib/firebase";
 
 const CreatePostModal = ({ onClose }) => {
     const { user, userData } = useAuth();
@@ -19,35 +18,27 @@ const CreatePostModal = ({ onClose }) => {
         setLoading(true);
 
         try {
-            // FORCE TOKEN REFRESH
-            if (user) {
-                console.log("Forcing token refresh...");
-                await user.getIdToken(true);
-                console.log("Token refreshed.");
-            }
-
-            console.log("Storage Bucket:", storage.app.options.storageBucket);
-
             let imageUrl = "";
+
             if (image) {
-                try {
-                    // Sanitize filename
-                    const cleanName = image.name.replace(/[^a-zA-Z0-9.]/g, "_");
-                    const imageRef = ref(storage, `feed/${Date.now()}_${cleanName}`);
+                const formData = new FormData();
+                formData.append("file", image);
+                formData.append("upload_preset", "ml_unsigned"); // User provided preset
 
-                    console.log("Uploading to:", imageRef.fullPath);
-                    console.log("Storage bucket:", storage.app.options.storageBucket);
+                console.log("Uploading to Cloudinary...");
+                const response = await fetch("https://api.cloudinary.com/v1_1/dnozipnsx/image/upload", {
+                    method: "POST",
+                    body: formData
+                });
 
-                    // Upload without metadata first to be safest
-                    const snapshot = await uploadBytes(imageRef, image);
-                    console.log("Upload successful:", snapshot);
-                    
-                    imageUrl = await getDownloadURL(snapshot.ref);
-                    console.log("Download URL:", imageUrl);
-                } catch (uploadError) {
-                    console.error("Image upload error:", uploadError);
-                    throw new Error(`Image upload failed: ${uploadError.message}`);
+                if (!response.ok) {
+                    const errorDetails = await response.json();
+                    throw new Error(errorDetails.error?.message || "Cloudinary Upload Failed");
                 }
+
+                const data = await response.json();
+                imageUrl = data.secure_url;
+                console.log("Cloudinary Upload Success:", imageUrl);
             }
 
             await addDoc(collection(db, "posts"), {
@@ -68,11 +59,6 @@ const CreatePostModal = ({ onClose }) => {
             onClose();
         } catch (error) {
             console.error("Error creating post:", error);
-            console.log("Error Code:", error.code);
-            console.log("Error Message:", error.message);
-            if (error.serverResponse) {
-                console.log("Server Response:", error.serverResponse);
-            }
             alert(`Upload Failed: ${error.message}`);
         } finally {
             setLoading(false);
