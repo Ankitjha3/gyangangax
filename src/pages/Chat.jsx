@@ -143,11 +143,7 @@ const Chat = () => {
                             <h2 className="font-bold text-white leading-tight">
                                 {otherUser?.name || "Chat"}
                             </h2>
-                            {/* Simple online status indicator (mock) */}
-                            <span className="text-[10px] text-green-500 font-medium flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                                Online
-                            </span>
+
                         </div>
                     </Link>
                 )}
