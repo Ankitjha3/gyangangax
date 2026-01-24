@@ -27,7 +27,7 @@ const AdminDashboard = () => {
         { id: "assignments", name: "Assignments" },
         { id: "roommate_posts", name: "Roommates" },
         { id: "confessions", name: "Confessions" },
-        { id: "study_links", name: "Study Hub" },
+        { id: "study_links", name: "Links" },
         { id: "marketplace_items", name: "Marketplace" }
     ];
 

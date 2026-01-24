@@ -17,9 +17,9 @@ const StudyLinks = () => {
     const [branchFilter, setBranchFilter] = useState("All");
     const [subjectFilter, setSubjectFilter] = useState("All");
 
-    const branches = ["All", "CS/IT", "ECE", "ME", "CE", "MBA", "BBA", "Pharmacy"];
+    const branches = ["All", "CS/IT", "ECE", "ME", "CE", "MBA", "BBA", "Pharmacy", "BCom", "Law"];
     // Simplified subject list for MVP
-    const subjects = ["All", "Mathematics", "Physics", "Programming", "Electronics", "Management", "Other"];
+    const subjects = ["All", "Study Links", "Promotion", "Services", "Other"];
 
     useEffect(() => {
         const q = query(collection(db, "study_links"), orderBy("timestamp", "desc"));
@@ -67,11 +67,18 @@ const StudyLinks = () => {
         return (match && match[2].length === 11) ? match[2] : null;
     };
 
+    const getInstagramEmbedUrl = (url) => {
+        if (!url) return null;
+        const match = url.match(/(?:instagram\.com|instagr\.am)\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/);
+        return match ? `https://www.instagram.com/p/${match[1]}/embed` : null;
+    };
+
     return (
         <div className="pb-24 pt-4 px-4 min-h-screen">
             <header className="flex justify-between items-center mb-6 sticky top-0 bg-neutral-950/80 backdrop-blur-md py-4 z-10 -mx-4 px-4 border-b border-neutral-800/50">
+
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
-                    Study Hub
+                    Links
                 </h1>
                 <Link to={`/u/${user?.uid}`} className="w-10 h-10 rounded-full overflow-hidden border border-neutral-700">
                     <img
@@ -126,6 +133,7 @@ const StudyLinks = () => {
                                     <p className="text-sm text-neutral-300 mb-3 line-clamp-2">{link.description}</p>
 
                                     {/* YouTube Preview */}
+                                    {/* YouTube Preview */}
                                     {getYouTubeId(link.url) && (
                                         <div className="mb-3 rounded-lg overflow-hidden relative w-full aspect-video bg-black">
                                             <iframe
@@ -136,6 +144,22 @@ const StudyLinks = () => {
                                                 frameBorder="0"
                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                 allowFullScreen
+                                                className="absolute inset-0"
+                                            ></iframe>
+                                        </div>
+                                    )}
+
+                                    {/* Instagram Preview */}
+                                    {getInstagramEmbedUrl(link.url) && (
+                                        <div className="mb-3 rounded-lg overflow-hidden relative w-full aspect-[4/5] bg-black border border-neutral-800">
+                                            <iframe
+                                                width="100%"
+                                                height="100%"
+                                                src={getInstagramEmbedUrl(link.url)}
+                                                title="Instagram post"
+                                                frameBorder="0"
+                                                scrolling="no"
+                                                allowTransparency="true"
                                                 className="absolute inset-0"
                                             ></iframe>
                                         </div>
@@ -216,7 +240,7 @@ const SubmitLinkModal = ({ onClose, branches, subjects }) => {
         url: "",
         type: "website",
         branch: "CS/IT",
-        subject: "Programming",
+        subject: "Study Links",
         description: ""
     });
 
@@ -271,7 +295,7 @@ const SubmitLinkModal = ({ onClose, branches, subjects }) => {
                             onChange={e => setFormData({ ...formData, type: e.target.value })}
                         >
                             <option value="website">Website</option>
-                            <option value="video">Video (YouTube)</option>
+                            <option value="video">Video</option>
                             <option value="pdf">PDF</option>
                             <option value="drive">Drive Folder</option>
                         </select>

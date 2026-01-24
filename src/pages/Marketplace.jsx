@@ -39,11 +39,22 @@ const Marketplace = () => {
             const chatSnap = await getDoc(chatRef);
 
             if (!chatSnap.exists()) {
+                const initialMessage = `Hi, I'm interested in buying: ${item.title}`;
+
+                // 1. Create the Chat Document
                 await setDoc(chatRef, {
                     participants: participantIds,
-                    lastMessage: `Hi, I'm interested in buying: ${item.title}`,
+                    lastMessage: initialMessage,
                     lastMessageTimestamp: serverTimestamp(),
-                    createdAt: serverTimestamp()
+                    createdAt: serverTimestamp(),
+                    readBy: [user.uid] // Mark read for sender
+                });
+
+                // 2. Add the actual message to the subcollection
+                await addDoc(collection(db, "chats", chatId, "messages"), {
+                    text: initialMessage,
+                    senderId: user.uid,
+                    timestamp: serverTimestamp()
                 });
             }
             navigate(`/chat/${chatId}`);

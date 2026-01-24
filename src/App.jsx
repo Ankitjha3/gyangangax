@@ -31,7 +31,7 @@ function App() {
             <Route path="/" element={<Feed />} />
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/roommates" element={<Roommates />} />
-            <Route path="/study-links" element={<StudyLinks />} />
+            <Route path="/links" element={<StudyLinks />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/confessions" element={<Confessions />} />
             <Route path="/post/:postId" element={<SinglePostPage />} />
