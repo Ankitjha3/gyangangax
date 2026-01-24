@@ -6,8 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
 import EditProfileModal from "../components/EditProfileModal";
 import UserListModal from "../components/UserListModal";
-import { HiArrowLeft, HiCalendar, HiLocationMarker } from "react-icons/hi";
-import { FaInstagram, FaLinkedin, FaGithub, FaLink } from "react-icons/fa";
+import { HiArrowLeft, HiCalendar, HiLocationMarker, HiShare } from "react-icons/hi";
+import { FaGithub, FaLinkedin, FaInstagram, FaWhatsapp, FaYoutube } from "react-icons/fa";
 import { MdVerified } from "react-icons/md";
 
 const UserProfile = () => {
@@ -38,8 +38,7 @@ const UserProfile = () => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setProfileData(data);
-                setFollowerCount(data.followerCount || 0);
-                setFollowingCount(data.followingCount || 0);
+                // We will fetch counts from subcollections to be safe
             } else {
                 setProfileData(null);
             }
@@ -47,6 +46,18 @@ const UserProfile = () => {
         }, (error) => {
             console.error("Error fetching profile:", error);
             setLoading(false);
+        });
+
+        // Fetch Follower Count (Real-time from subcollection)
+        const followersCol = collection(db, "users", userId, "followers");
+        const unsubFollowers = onSnapshot(followersCol, (snap) => {
+            setFollowerCount(snap.size);
+        });
+
+        // Fetch Following Count (Real-time from subcollection)
+        const followingCol = collection(db, "users", userId, "following");
+        const unsubFollowing = onSnapshot(followingCol, (snap) => {
+            setFollowingCount(snap.size);
         });
 
         const postsQ = query(
@@ -74,6 +85,8 @@ const UserProfile = () => {
             unsubUser();
             unsubPosts();
             unsubFollow();
+            unsubFollowers();
+            unsubFollowing();
         };
     }, [userId, user, isOwnProfile]);
 
@@ -160,20 +173,46 @@ const UserProfile = () => {
         return <div className="flex justify-center pt-20 text-neutral-500">User not found.</div>;
     }
 
+    const handleShare = async () => {
+        const url = window.location.href;
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `Check out ${profileData?.name}'s profile on GyanGanga`,
+                    url: url
+                });
+            } catch (err) {
+                console.log("Error sharing", err);
+            }
+        } else {
+            navigator.clipboard.writeText(url);
+            alert("Profile link copied to clipboard!");
+        }
+    };
+
     return (
         <div className="pb-20">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-6 sticky top-0 bg-black/80 backdrop-blur-md p-4 -mx-4 z-10 border-b border-neutral-900">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="p-2 rounded-full hover:bg-neutral-800 text-white"
-                >
-                    <HiArrowLeft size={20} />
-                </button>
-                <div>
-                    <h1 className="text-xl font-bold text-white leading-tight">{profileData.name}</h1>
-                    <p className="text-xs text-neutral-500">{posts.length} posts</p>
+            <div className="flex justify-between items-center mb-6 sticky top-0 bg-black/80 backdrop-blur-md p-4 -mx-4 z-10 border-b border-neutral-900">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-2 rounded-full hover:bg-neutral-800 text-white"
+                    >
+                        <HiArrowLeft size={20} />
+                    </button>
+                    <div>
+                        <h1 className="text-xl font-bold text-white leading-tight">{profileData.name}</h1>
+                        <p className="text-xs text-neutral-500">{posts.length} posts</p>
+                    </div>
                 </div>
+                <button
+                    onClick={handleShare}
+                    className="p-2 rounded-full hover:bg-neutral-800 text-white"
+                    title="Share Profile"
+                >
+                    <HiShare size={24} />
+                </button>
             </div>
 
             {/* Profile Info */}
@@ -272,6 +311,16 @@ const UserProfile = () => {
                                 className="text-white hover:text-gray-300 transition-colors"
                             >
                                 <FaGithub size={20} />
+                            </a>
+                        )}
+                        {profileData.socialLinks.youtube && (
+                            <a
+                                href={profileData.socialLinks.youtube.startsWith('http') ? profileData.socialLinks.youtube : `https://youtube.com/${profileData.socialLinks.youtube}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-red-500 hover:text-red-400 transition-colors"
+                            >
+                                <FaYoutube size={20} />
                             </a>
                         )}
                     </div>

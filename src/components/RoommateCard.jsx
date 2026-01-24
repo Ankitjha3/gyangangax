@@ -3,8 +3,8 @@ import { FaWhatsapp } from "react-icons/fa";
 import { formatDistanceToNow } from "date-fns";
 import clsx from "clsx";
 import { useAuth } from "../context/AuthContext";
-import { deleteDoc, doc } from "firebase/firestore";
-import { Link } from "react-router-dom";
+import { deleteDoc, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { Link, useNavigate } from "react-router-dom";
 import { db } from "../lib/firebase";
 import { HiTrash } from "react-icons/hi";
 import { useState } from "react";
@@ -13,8 +13,32 @@ import { AnimatePresence } from "framer-motion";
 
 const RoommateCard = ({ post }) => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [showComments, setShowComments] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+
+    const handleMessage = async () => {
+        if (!user) return;
+        try {
+            const participantIds = [user.uid, post.authorId].sort();
+            const chatId = `${participantIds[0]}_${participantIds[1]}`;
+            const chatRef = doc(db, "chats", chatId);
+            const chatSnap = await getDoc(chatRef);
+
+            if (!chatSnap.exists()) {
+                await setDoc(chatRef, {
+                    participants: participantIds,
+                    lastMessage: "",
+                    lastMessageTimestamp: serverTimestamp(),
+                    createdAt: serverTimestamp()
+                });
+            }
+            navigate(`/chat/${chatId}`);
+        } catch (error) {
+            console.error("Error creating chat:", error);
+            alert("Could not start chat.");
+        }
+    };
 
     const handleDelete = async () => {
         if (!confirm("Are you sure you want to delete this listing?")) return;
@@ -90,15 +114,26 @@ const RoommateCard = ({ post }) => {
                     )}
                 </div>
 
-                <a
-                    href={`https://wa.me/${post.contact}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full bg-[#25D366] text-black font-bold py-2 rounded-lg hover:brightness-90 transition-all active:scale-95"
-                >
-                    <FaWhatsapp size={18} />
-                    Chat on WhatsApp
-                </a>
+                <div className="flex gap-2">
+                    <a
+                        href={`https://wa.me/${post.contact}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-black font-bold py-2 rounded-lg hover:brightness-90 transition-all active:scale-95"
+                    >
+                        <FaWhatsapp size={18} />
+                        WhatsApp
+                    </a>
+                    {user?.uid !== post.authorId && (
+                        <button
+                            onClick={handleMessage}
+                            className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-500 transition-all active:scale-95"
+                        >
+                            <HiChatAlt size={18} />
+                            Message
+                        </button>
+                    )}
+                </div>
 
                 <button
                     onClick={() => setShowComments(!showComments)}

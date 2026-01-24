@@ -2,16 +2,40 @@ import { HiDocumentText, HiChatAlt, HiTrash, HiCurrencyRupee } from "react-icons
 import { FaWhatsapp } from "react-icons/fa";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import CommentSection from "./CommentSection";
 import { useAuth } from "../context/AuthContext";
 import { AnimatePresence } from "framer-motion";
-import { deleteDoc, doc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
 const AssignmentCard = ({ assignment }) => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [showComments, setShowComments] = useState(false);
+
+    const handleMessage = async () => {
+        if (!user) return;
+        try {
+            const participantIds = [user.uid, assignment.authorId].sort();
+            const chatId = `${participantIds[0]}_${participantIds[1]}`;
+            const chatRef = doc(db, "chats", chatId);
+            const chatSnap = await getDoc(chatRef);
+
+            if (!chatSnap.exists()) {
+                await setDoc(chatRef, {
+                    participants: participantIds,
+                    lastMessage: "",
+                    lastMessageTimestamp: serverTimestamp(),
+                    createdAt: serverTimestamp()
+                });
+            }
+            navigate(`/chat/${chatId}`);
+        } catch (error) {
+            console.error("Error creating chat:", error);
+            alert("Could not start chat.");
+        }
+    };
 
     const handleDelete = async () => {
         if (!confirm("Are you sure you want to delete this assignment?")) return;
@@ -54,6 +78,15 @@ const AssignmentCard = ({ assignment }) => {
                         >
                             <FaWhatsapp size={16} />
                         </a>
+                    )}
+                    {user?.uid !== assignment.authorId && (
+                        <button
+                            onClick={handleMessage}
+                            className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-500 transition-colors"
+                            title="Message internally"
+                        >
+                            <HiChatAlt size={16} />
+                        </button>
                     )}
                 </div>
             </div>

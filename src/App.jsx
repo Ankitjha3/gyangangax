@@ -15,6 +15,9 @@ import AdminRoute from "./components/AdminRoute";
 import Inbox from "./pages/Inbox";
 import Chat from "./pages/Chat";
 import NotificationsPage from "./pages/NotificationsPage";
+import SinglePostPage from "./pages/SinglePostPage";
+import StudyLinks from "./pages/StudyLinks";
+import Marketplace from "./pages/Marketplace";
 
 function App() {
   return (
@@ -28,7 +31,10 @@ function App() {
             <Route path="/" element={<Feed />} />
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/roommates" element={<Roommates />} />
+            <Route path="/study-links" element={<StudyLinks />} />
+            <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/confessions" element={<Confessions />} />
+            <Route path="/post/:postId" element={<SinglePostPage />} />
             <Route path="/u/:userId" element={<UserProfile />} />
             <Route path="/chats" element={<Inbox />} />
             <Route path="/notifications" element={<NotificationsPage />} />

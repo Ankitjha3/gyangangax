@@ -4,17 +4,23 @@ import { db } from "../lib/firebase";
 import { HiX } from "react-icons/hi";
 import { Link } from "react-router-dom";
 
-const UserListModal = ({ userId, type, onClose }) => {
+const UserListModal = ({ userId, type, onClose, initialUserIds }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                // 1. Get the list of user IDs from the subcollection
-                const subCollRef = collection(db, "users", userId, type); // type is "followers" or "following"
-                const snapshot = await getDocs(subCollRef);
-                const userIds = snapshot.docs.map(doc => doc.id);
+                let userIds = [];
+
+                if (initialUserIds && initialUserIds.length > 0) {
+                    userIds = initialUserIds;
+                } else if (userId && type) {
+                    // 1. Get the list of user IDs from the subcollection
+                    const subCollRef = collection(db, "users", userId, type); // type is "followers" or "following"
+                    const snapshot = await getDocs(subCollRef);
+                    userIds = snapshot.docs.map(doc => doc.id);
+                }
 
                 if (userIds.length === 0) {
                     setUsers([]);
@@ -40,10 +46,8 @@ const UserListModal = ({ userId, type, onClose }) => {
             }
         };
 
-        if (userId && type) {
-            fetchUsers();
-        }
-    }, [userId, type]);
+        fetchUsers();
+    }, [userId, type, initialUserIds]);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">

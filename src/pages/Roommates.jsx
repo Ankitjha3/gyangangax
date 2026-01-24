@@ -4,8 +4,11 @@ import { db } from "../lib/firebase";
 import RoommateCard from "../components/RoommateCard";
 import CreateRoommateModal from "../components/CreateRoommateModal";
 import { HiPlus } from "react-icons/hi";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Roommates = () => {
+    const { user } = useAuth();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -34,6 +37,13 @@ const Roommates = () => {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                     Find Room/Roomie
                 </h1>
+                <Link to={`/u/${user?.uid}`} className="w-10 h-10 rounded-full overflow-hidden border border-neutral-700 shrink-0 ml-3">
+                    <img
+                        src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName || "User"}&background=random`}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                    />
+                </Link>
                 <div className="flex bg-neutral-900 rounded-lg p-1 border border-neutral-800">
                     {["All", "Flat", "Hostel"].map(type => (
                         <button

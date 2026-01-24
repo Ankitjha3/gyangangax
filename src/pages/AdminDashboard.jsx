@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc, getCountFromServer } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { HiTrash, HiBan, HiCheckCircle, HiStar, HiSearch, HiFilter, HiUsers } from "react-icons/hi";
+import { HiTrash, HiBan, HiCheckCircle, HiStar, HiSearch, HiFilter, HiUsers, HiLink, HiShoppingCart } from "react-icons/hi";
 import PostCard from "../components/PostCard";
 import AssignmentCard from "../components/AssignmentCard";
 import RoommateCard from "../components/RoommateCard";
@@ -26,7 +26,9 @@ const AdminDashboard = () => {
         { id: "posts", name: "Feed Posts" },
         { id: "assignments", name: "Assignments" },
         { id: "roommate_posts", name: "Roommates" },
-        { id: "confessions", name: "Confessions" }
+        { id: "confessions", name: "Confessions" },
+        { id: "study_links", name: "Study Hub" },
+        { id: "marketplace_items", name: "Marketplace" }
     ];
 
     const fetchContent = useCallback(async () => {
@@ -329,6 +331,40 @@ const AdminDashboard = () => {
                                             {contentCategory === "assignments" && <AssignmentCard assignment={item} />}
                                             {contentCategory === "roommate_posts" && <RoommateCard post={item} />}
                                             {contentCategory === "confessions" && <ConfessionCard post={item} />}
+
+                                            {contentCategory === "study_links" && (
+                                                <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="mt-1 text-blue-400">
+                                                            <HiLink size={24} />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="font-bold text-white text-base">{item.title}</h3>
+                                                            <a href={item.url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline">{item.url}</a>
+                                                            <p className="text-xs text-neutral-400 mt-1">{item.branch} • {item.subject}</p>
+                                                            <p className="text-[10px] text-neutral-600 mt-2">Shared by {item.authorName}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {contentCategory === "marketplace_items" && (
+                                                <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl flex gap-3">
+                                                    {item.imageUrl ? (
+                                                        <img src={item.imageUrl} alt={item.title} className="w-16 h-16 rounded-lg object-cover bg-neutral-800" />
+                                                    ) : (
+                                                        <div className="w-16 h-16 rounded-lg bg-neutral-800 flex items-center justify-center text-neutral-600">
+                                                            <HiShoppingCart size={24} />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <h3 className="font-bold text-white text-base">{item.title}</h3>
+                                                        <p className="text-green-400 font-bold text-sm">₹{item.price}</p>
+                                                        <p className="text-[10px] text-neutral-500 bg-neutral-800 px-2 py-0.5 rounded-full inline-block mt-1">{item.category}</p>
+                                                        <p className="text-[10px] text-neutral-600 mt-1">Seller: {item.sellerName}</p>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))

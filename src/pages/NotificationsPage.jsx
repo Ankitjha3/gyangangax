@@ -92,40 +92,47 @@ const NotificationsPage = () => {
                 ) : (
                     notifications.map(notif => {
                         const sender = usersMap[notif.senderId] || { name: notif.senderName, photoUrl: notif.senderPhoto };
+
+                        const postLink = notif.postId ? `/post/${notif.postId}` : "#";
+
                         return (
-                            <Link
+                            <div
                                 key={notif.id}
-                                to={getLink(notif)}
                                 className="flex items-center gap-4 p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition-all"
                             >
-                                <div className="w-10 h-10 rounded-full bg-neutral-800 overflow-hidden shrink-0 border border-neutral-700 relative">
-                                    <img
-                                        src={sender.photoUrl || `https://ui-avatars.com/api/?name=${sender.name}&background=random`}
-                                        alt={sender.name}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = `https://ui-avatars.com/api/?name=${sender.name || "User"}&background=random`;
-                                        }}
-                                    />
-                                    <div className="absolute -bottom-1 -right-1 bg-neutral-900 rounded-full p-1 border border-neutral-800">
-                                        {getIcon(notif.type)}
+                                <Link to={`/u/${notif.senderId}`} className="shrink-0 group">
+                                    <div className="w-10 h-10 rounded-full bg-neutral-800 overflow-hidden border border-neutral-700 relative group-hover:border-neutral-500 transition-colors">
+                                        <img
+                                            src={sender.photoUrl || `https://ui-avatars.com/api/?name=${sender.name}&background=random`}
+                                            alt={sender.name}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = `https://ui-avatars.com/api/?name=${sender.name || "User"}&background=random`;
+                                            }}
+                                        />
+                                        <div className="absolute -bottom-1 -right-1 bg-neutral-900 rounded-full p-1 border border-neutral-800">
+                                            {getIcon(notif.type)}
+                                        </div>
                                     </div>
-                                </div>
+                                </Link>
+
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-white">
-                                        <span className="font-bold">{sender.name || "User"}</span>{" "}
-                                        <span className="text-neutral-400">
+                                    <div className="text-sm text-white">
+                                        <Link to={`/u/${notif.senderId}`} className="font-bold hover:underline">
+                                            {sender.name || "User"}
+                                        </Link>{" "}
+                                        <Link to={notif.type === "follow" ? `/u/${notif.senderId}` : postLink} className="text-neutral-400 hover:text-neutral-300 transition-colors">
                                             {notif.type === "like" && "liked your post."}
                                             {notif.type === "comment" && "commented on your post."}
                                             {notif.type === "follow" && "started following you."}
-                                        </span>
-                                    </p>
+                                        </Link>
+                                    </div>
                                     <p className="text-[10px] text-neutral-500 mt-1">
                                         {notif.timestamp?.seconds ? formatDistanceToNow(new Date(notif.timestamp.seconds * 1000), { addSuffix: true }) : "Just now"}
                                     </p>
                                 </div>
-                            </Link>
+                            </div>
                         );
                     })
                 )}

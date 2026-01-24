@@ -84,6 +84,16 @@ const Feed = () => {
                 </h1>
                 <div className="flex items-center gap-3">
                     <button
+                        onClick={() => navigate(`/u/${user?.uid}`)}
+                        className="w-8 h-8 rounded-full overflow-hidden border border-neutral-700"
+                    >
+                        <img
+                            src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName || "User"}&background=random`}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                        />
+                    </button>
+                    <button
                         onClick={() => setShowSearchModal(true)}
                         className="p-2 rounded-full hover:bg-neutral-800 text-neutral-300"
                     >

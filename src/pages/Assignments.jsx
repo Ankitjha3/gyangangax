@@ -4,10 +4,11 @@ import { db } from "../lib/firebase";
 import AssignmentCard from "../components/AssignmentCard";
 import UploadAssignmentModal from "../components/UploadAssignmentModal";
 import { HiPlus, HiFilter } from "react-icons/hi";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Assignments = () => {
-    const { userData } = useAuth();
+    const { userData, user } = useAuth();
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showUploadModal, setShowUploadModal] = useState(false);
@@ -51,6 +52,15 @@ const Assignments = () => {
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                         Assignments
                     </h1>
+                    <Link to={`/u/${user?.uid}`} className="w-10 h-10 rounded-full overflow-hidden border border-neutral-700">
+                        <img
+                            src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName || "User"}&background=random`}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                        />
+                    </Link>
+                </div>
+                <div className="flex justify-between items-center mb-4">
                     <button
                         onClick={() => setShowUploadModal(true)}
                         className="flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"

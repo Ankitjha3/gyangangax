@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { HiHome, HiBookOpen, HiUsers, HiChatAlt2, HiUserCircle, HiHeart } from "react-icons/hi";
+import { HiHome, HiBookOpen, HiUsers, HiChatAlt2, HiUserCircle, HiHeart, HiShoppingBag } from "react-icons/hi";
 import clsx from "clsx";
 import { useAuth } from "../context/AuthContext";
 
@@ -9,9 +9,10 @@ const BottomNav = () => {
     const navItems = [
         { name: "Feed", path: "/", icon: HiHome },
         { name: "Assignments", path: "/assignments", icon: HiBookOpen },
-        { name: "Roommates", path: "/roommates", icon: HiUsers },
+        { name: "Roomie", path: "/roommates", icon: HiUsers },
+        { name: "Study", path: "/study-links", icon: HiBookOpen },
+        { name: "Market", path: "/marketplace", icon: HiShoppingBag },
         { name: "Confessions", path: "/confessions", icon: HiChatAlt2 },
-        { name: "Profile", path: `/u/${user?.uid}`, icon: HiUserCircle },
     ];
 
     return (

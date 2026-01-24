@@ -7,6 +7,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Helper to check admin
+    function isAdmin() {
+      return request.auth.token.email == "ajha10597@gmail.com";
+    }
+
     // Helper to check college
     function isGyanGanga() {
        return request.resource.data.college == "Gyan Ganga Group of Institutions" || 
@@ -27,29 +32,25 @@ service cloud.firestore {
       // Subcollections for social graph
       match /followers/{followerId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated() && (request.auth.uid == followerId || request.auth.uid == userId);
+        // Allow write if you are the follower (creating the follow) OR the user (removing the follower?)
+        // Actually, usually follower writes to their own ID in followers subcol
+        allow write: if isAuthenticated(); 
       }
       
       match /following/{followingId} {
           allow read: if isAuthenticated();
-          allow write: if isAuthenticated() && (request.auth.uid == userId);
+          allow write: if isAuthenticated();
       }
 
       // Notifications: 
-      // - Create: Any auth user (to send notif)
-      // - Read: Only owner
-      // - Update: Only owner (mark read)
       match /notifications/{notificationId} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
-        allow create: if isAuthenticated();
+        allow create: if isAuthenticated(); // Anyone can send notif
         allow update, delete: if isAuthenticated() && request.auth.uid == userId;
       }
     }
 
     // Posts, Assignments, Roommates, Confessions
-    // Allow read/write for all authenticated users
-    // In a real app, strict validation on schema would be here
-    
     match /posts/{postId} {
       allow read, write: if isAuthenticated();
       
@@ -84,6 +85,33 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read, write: if isAuthenticated();
       }
+    }
+
+    match /study_links/{linkId} {
+      allow get: if true;
+      allow list: if isAuthenticated();
+      allow create: if isAuthenticated();
+      // Admin OR Owner can delete/full update. Others can ONLY update commentCount.
+      allow delete: if isAuthenticated() && (isAdmin() || request.auth.uid == resource.data.authorId);
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        request.auth.uid == resource.data.authorId ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']))
+      );
+      
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        // Allow delete if author or Admin
+        allow delete: if isAuthenticated() && (isAdmin() || request.auth.uid == resource.data.authorId);
+      }
+    }
+
+    match /marketplace_items/{itemId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      // Admin OR Owner can update/delete
+      allow update, delete: if isAuthenticated() && (isAdmin() || request.auth.uid == resource.data.sellerId);
     }
 
     // Messaging Rules: Strict

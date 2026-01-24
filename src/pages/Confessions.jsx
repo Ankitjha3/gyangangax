@@ -4,8 +4,11 @@ import { db } from "../lib/firebase";
 import ConfessionCard from "../components/ConfessionCard";
 import CreateConfessionModal from "../components/CreateConfessionModal";
 import { HiPlus } from "react-icons/hi";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Confessions = () => {
+    const { user } = useAuth();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -24,10 +27,17 @@ const Confessions = () => {
 
     return (
         <div className="pb-20 pt-4 px-4 min-h-screen bg-black">
-            <header className="flex justify-between items-center mb-6 sticky top-0 bg-black/80 backdrop-blur-md py-4 z-10 -mx-4 px-4 border-b border-neutral-900">
+            <header className="flex justify-between items-center mb-6 sticky top-0 bg-black/80 backdrop-blur-md py-4 z-10 -mx-4 px-6 border-b border-neutral-900">
                 <h1 className="text-2xl font-bold text-purple-500">
                     Confessions 🤫
                 </h1>
+                <Link to={`/u/${user?.uid}`} className="w-10 h-10 rounded-full overflow-hidden border border-neutral-700">
+                    <img
+                        src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName || "User"}&background=random`}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                    />
+                </Link>
             </header>
 
             {loading ? (

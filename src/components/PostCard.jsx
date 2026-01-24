@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { doc, updateDoc, deleteDoc, setDoc, getDoc, collection, addDoc, serverTimestamp, increment, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import CommentSection from "./CommentSection";
+import UserListModal from "./UserListModal";
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -12,6 +13,7 @@ import { Link } from "react-router-dom";
 const PostCard = ({ post }) => {
     const { user } = useAuth();
     const [showComments, setShowComments] = useState(false);
+    const [showLikesModal, setShowLikesModal] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
 
     const [hasLiked, setHasLiked] = useState(false);
@@ -181,10 +183,16 @@ const PostCard = ({ post }) => {
 
             <div className="flex items-center gap-4 text-neutral-400">
                 <button
-                    onClick={toggleLike}
+                    onClick={() => {
+                        if (localLikes.length > 0) {
+                            setShowLikesModal(true);
+                        }
+                    }}
                     className={`flex items-center gap-1.5 transition-colors ${hasLiked ? "text-pink-500" : "hover:text-pink-500"}`}
                 >
-                    {hasLiked ? <HiHeart size={20} /> : <HiOutlineHeart size={20} />}
+                    <div onClick={(e) => { e.stopPropagation(); toggleLike(); }}>
+                        {hasLiked ? <HiHeart size={20} /> : <HiOutlineHeart size={20} />}
+                    </div>
                     <span className="text-sm">{localLikes.length}</span>
                 </button>
 
@@ -215,6 +223,14 @@ const PostCard = ({ post }) => {
             <AnimatePresence>
                 {showComments && <CommentSection collectionName="posts" postId={post.id} />}
             </AnimatePresence>
+
+            {showLikesModal && (
+                <UserListModal
+                    initialUserIds={localLikes}
+                    type="Likes"
+                    onClose={() => setShowLikesModal(false)}
+                />
+            )}
         </div>
     );
 };

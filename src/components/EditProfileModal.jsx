@@ -13,6 +13,7 @@ const EditProfileModal = ({ onClose }) => {
     const [instagram, setInstagram] = useState(userData?.socialLinks?.instagram || "");
     const [linkedin, setLinkedin] = useState(userData?.socialLinks?.linkedin || "");
     const [github, setGithub] = useState(userData?.socialLinks?.github || "");
+    const [youtube, setYoutube] = useState(userData?.socialLinks?.youtube || ""); // Added youtube state
     const [loading, setLoading] = useState(false);
 
     const branches = ["B.Tech", "MBA", "B.Com", "Pharmacy", "Law", "BBA"];
@@ -26,7 +27,7 @@ const EditProfileModal = ({ onClose }) => {
             const userRef = doc(db, "users", user.uid);
             const updates = {
                 name, bio, branch, year,
-                socialLinks: { instagram, linkedin, github }
+                socialLinks: { instagram, linkedin, github, youtube }
             };
 
             await updateDoc(userRef, updates);
@@ -131,6 +132,16 @@ const EditProfileModal = ({ onClose }) => {
                                 onChange={(e) => setGithub(e.target.value)}
                                 className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-white transition-colors"
                                 placeholder="GitHub Profile URL"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-neutral-400 mb-1">YouTube</label>
+                            <input
+                                type="text"
+                                value={youtube}
+                                onChange={(e) => setYoutube(e.target.value)}
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                                placeholder="YouTube Channel URL"
                             />
                         </div>
                     </div>
