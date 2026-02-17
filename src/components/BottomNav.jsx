@@ -8,11 +8,11 @@ const BottomNav = () => {
 
     const navItems = [
         { name: "Feed", path: "/", icon: HiHome },
-        { name: "Assignments", path: "/assignments", icon: HiBookOpen },
+        // { name: "Assignments", path: "/assignments", icon: HiBookOpen },
         { name: "Roomie", path: "/roommates", icon: HiUsers },
         { name: "Links", path: "/links", icon: HiLink },
         { name: "Market", path: "/marketplace", icon: HiShoppingBag },
-        { name: "Confessions", path: "/confessions", icon: HiChatAlt2 },
+        // { name: "Confessions", path: "/confessions", icon: HiChatAlt2 },
     ];
 
     return (

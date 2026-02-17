@@ -29,11 +29,11 @@ function App() {
 
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route path="/" element={<Feed />} />
-            <Route path="/assignments" element={<Assignments />} />
+            {/* <Route path="/assignments" element={<Assignments />} /> */}
             <Route path="/roommates" element={<Roommates />} />
             <Route path="/links" element={<StudyLinks />} />
             <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/confessions" element={<Confessions />} />
+            {/* <Route path="/confessions" element={<Confessions />} /> */}
             <Route path="/post/:postId" element={<SinglePostPage />} />
             <Route path="/u/:userId" element={<UserProfile />} />
             <Route path="/chats" element={<Inbox />} />
